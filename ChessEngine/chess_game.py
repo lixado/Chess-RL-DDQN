@@ -73,11 +73,11 @@ class Chess:
         # if pawn on other side promote to queen
         for x, elem in enumerate(self.board[0]):
             if elem == 'wP':
-                self.board[0,x] = 'wQ' # promote to queen
+                self.board[0][x] = 'wQ' # promote to queen
 
         for x, elem in enumerate(self.board[7]):
             if elem == 'bP':
-                self.board[0,x] = 'bQ' # promote to queen
+                self.board[0][x] = 'bQ' # promote to queen
  
 
     
