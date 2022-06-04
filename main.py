@@ -13,7 +13,7 @@ if __name__ == '__main__':
     """
         Choose mode
     """
-    modes = ["P vs P", "P vs AI", "Train", "Train UI"]
+    modes = ["P vs P", "P vs white AI", "P vs black AI", "Train", "Train UI"]
     for cnt, modeName in enumerate(modes, 1):
         sys.stdout.write("[%d] %s\n\r" % (cnt, modeName))
 
@@ -24,8 +24,8 @@ if __name__ == '__main__':
     """
     chess = Chess()
 
-    if mode >= 2: # Train AI
-        ui = UI(chess.board) if mode == 3 else None
+    if mode >= 3: # Train AI
+        ui = UI(chess.board) if mode == 4 else None
 
         """
             Variables
@@ -44,31 +44,35 @@ if __name__ == '__main__':
 
         print("Action space size: ", len(action_space)) # 8^4 = 8*8*8*8 = 4096
 
-        env = ChessGym(chess, action_space) # start Enviroment 
+        env = ChessGym(chess, ui, action_space) # start Enviroment 
 
-        #env = NormalizeObservation(env)  # normalize the observation values
-        #env = NormalizeReward(env)  # normalize reward values
+        env = NormalizeObservation(env)  # normalize the observation values
+        env = NormalizeReward(env)  # normalize reward values
 
         saveDirPlayer1 = save_dir / 'player1'
         aiPlayer1 = AIPlayer(action_space, saveDirPlayer1) # start AI
         loggerPlayer1 = Logger(saveDirPlayer1)
 
-        #aiPlayer2 = AIPlayer(action_space, save_dir / 'player2') # start AI
+        saveDirPlayer2 = save_dir / 'player2'
+        aiPlayer2 = AIPlayer(action_space, saveDirPlayer2) # start AI
+        loggerPlayer2 = Logger(saveDirPlayer2)
 
         whiteWin = 0
         blackWin = 0
         for e in range(episodes):
             observation = env.reset() # reset game
+            if e == 0:
+                print("Observation: ", observation)
 
             while True: # while playing
-                if mode == 3:
-                    env.render(ui)
+                if mode == 4:
+                    env.render()
 
                 """
                     Player 1 makes move
                 """
                 actionId = aiPlayer1.act(observation)
-                next_observation, reward, done, info = env.step(actionId, color)
+                next_observation, reward, done, info = env.step(actionId)
 
                 # Remember
                 aiPlayer1.cache(observation, next_observation, actionId, reward, done)
@@ -79,10 +83,26 @@ if __name__ == '__main__':
                 # Update state
                 observation = next_observation
 
+                """
+                    Player 2 makes move
+                """
+                actionId = aiPlayer2.act(observation)
+                next_observation, reward, done, info = env.step(actionId)
+
+                # Remember
+                aiPlayer2.cache(observation, next_observation, actionId, reward, done)
+                # Learn
+                q, loss = aiPlayer2.learn()
+                # Log
+                loggerPlayer2.log_step(reward, loss, q)
+                # Update state
+                observation = next_observation
+
+
                 if loggerPlayer1.steps % 500 == 0:
                     print(".", end="")
 
-                if done or loggerPlayer1.steps > 8000:
+                if done or loggerPlayer1.steps > 10000:
                     if chess.GetWinner() == "w":
                         whiteWin += 1
                     elif chess.GetWinner() == "b":
@@ -91,9 +111,11 @@ if __name__ == '__main__':
 
             # Episode is done
             loggerPlayer1.log_episode(e, aiPlayer1.exploration_rate, whiteWin, blackWin)
+            loggerPlayer2.log_episode(e, aiPlayer2.exploration_rate, blackWin, whiteWin)
 
         # when finished training save model
         aiPlayer1.save()
+        aiPlayer2.save()
 
     if mode == 0: # P vs P
         """

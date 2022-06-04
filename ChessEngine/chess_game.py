@@ -326,6 +326,12 @@ class Chess:
 
         return 0
 
+    def GetCurrentColor(self):
+        if self.currentTurn % 2 == 0:
+            return 'w'
+        
+        return 'b'
+
     def GetEnemyColor(self, color):
         if color == 'w':
             return 'b'

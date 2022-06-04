@@ -9,8 +9,9 @@ from UI.chess_ui import UI
 
 
 class ChessGym(gym.Env):
-    def __init__(self, chess: Chess, action_space):
+    def __init__(self, chess: Chess, ui: UI, action_space):
         self.chess = chess
+        self.ui = ui
         self.action_space = action_space
 
         self.translateDict = {"__": 0,"wP":1, "wH":2, "wB":3, "wR": 4, "wQ":5, "wK":6,
@@ -19,40 +20,35 @@ class ChessGym(gym.Env):
         self.observation_space = Box(low=min(self.translateDict.values()), high=max(self.translateDict.values()), shape=(8, 8), dtype=np.float16)
 
         print("Observation_space: ", self.observation_space)
-        self.ilegalInArow = 0
 
 
-    def step(self, actionId, color):
+    def step(self, actionId):
         """
             return observation, reward, done, info
         """
         action = self.action_space[actionId]
 
-        possibleMoves = self.chess.GetCurrentTurnPossibleMoves()
+        currentColor = self.chess.GetCurrentColor()
+        possibleMoves = self.chess.GetAvaliableMoves(currentColor)
 
         """
             Calculate reward
         """
         done = False
         reward = 0
-        if self.ilegalInArow > 1000: # do not let the game go for to long
+        if self.ilegalInArow > 1000: # do not let the AI make more then 1000 ilegal in a row
             return self.getObservation(), -1000, True, {}
         if action in possibleMoves: # if move is allowed
             self.chess.MakeMove(action) # make action
 
             winner = self.chess.GetWinner() 
             if winner == 0: # if no winner
-                reward = self.evaluateBoard(color)*10 # get basic score
+                reward = self.evaluateBoard(self.chess.GetCurrentColor())*10 # get basic score
 
-                # tick
-                # make next move using randomeness to test
-                possibleMoves = self.chess.GetCurrentTurnPossibleMoves()
-                self.chess.MakeMove(random.choice(possibleMoves))
-
-            elif self.chess.GetWinner() == color: # if we won
+            elif self.chess.GetWinner() == currentColor: # if we won
                 reward = 100
                 done = True
-            elif self.chess.GetWinner() != color: # if we lost
+            else: # if we lost
                 reward = -100
                 done = True
 
@@ -83,7 +79,7 @@ class ChessGym(gym.Env):
             return enemyDead + myDead
 
     def getObservation(self):
-        return self.translateBoard(self.chess.board).unsqueeze(0)
+        return np.expand_dims(self.translateBoard(self.chess.board), axis=0)
 
     def translateBoard(self, board: List[List]):
         translated = []
@@ -94,10 +90,10 @@ class ChessGym(gym.Env):
 
             translated.append(newRow)
 
-        return torch.FloatTensor(translated)
+        return np.array(translated)
 
-    def render(self, ui: UI):
-        ui.update(self.chess)
+    def render(self):
+        self.ui.update(self.chess)
 
-        ui.root.update() # draw
+        self.ui.root.update() # draw
 
