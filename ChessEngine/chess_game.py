@@ -154,25 +154,30 @@ class Chess:
         movesToRemove = []
         for possibleMove in possibleMoves:
             for enemyMove in enemyMoves:
-                if 'P' in self.GetIdFromMoveStart(enemyMove): # if it is a pawn
-                    # then diagonals are the possible enemy move
-                    if self.currentTurn % 2 == 0: # white turn
-                        downLeft = self.MatrixAddition(enemyMove.oldPosition, self.downLeftDiag)
-                        downRight = self.MatrixAddition(enemyMove.oldPosition, self.downRightDiag)
-
-                        for diag in [downLeft, downRight]:
-                            if possibleMove.newPosition == diag:
-                                movesToRemove.append(possibleMove)
-                    else: # black turn
-                        upLeft = self.MatrixAddition(enemyMove.oldPosition, self.upLeftDiag)
-                        upRight = self.MatrixAddition(enemyMove.oldPosition, self.upRightDiag)
-
-                        for diag in [upLeft, upRight]:
-                            if possibleMove.newPosition == diag:
-                                movesToRemove.append(possibleMove)
-                else: # if not pawn
+                if 'P' not in self.GetIdFromMoveStart(enemyMove): # if not pawn
                     if possibleMove.newPosition == enemyMove.newPosition:
                         movesToRemove.append(possibleMove)
+
+        # handle the pawns
+        enemyPawns = [x.position for x in self.GetPiecesWithPosition(self.GetEnemyColor(color)) if 'P' in x.piece]
+
+        for possibleMove in possibleMoves:
+            for pawn in enemyPawns:
+                if self.currentTurn % 2 == 0: # white turn
+                    downLeft = self.MatrixAddition(pawn, self.downLeftDiag)
+                    downRight = self.MatrixAddition(pawn, self.downRightDiag)
+
+                    for diag in [downLeft, downRight]:
+                        if possibleMove.newPosition == diag:
+                            movesToRemove.append(possibleMove)
+                else: # black turn
+                    upLeft = self.MatrixAddition(pawn, self.upLeftDiag)
+                    upRight = self.MatrixAddition(pawn, self.upRightDiag)
+
+                    for diag in [upLeft, upRight]:
+                        if possibleMove.newPosition == diag:
+                            movesToRemove.append(possibleMove)
+
 
         return [x for x in possibleMoves if x not in movesToRemove]
 
@@ -320,6 +325,12 @@ class Chess:
             return 'b'
 
         return 0
+
+    def GetEnemyColor(self, color):
+        if color == 'w':
+            return 'b'
+        if color == 'b':
+            return 'w'
 
     def GetIdFromMoveStart(self, move: Move) -> str:
         return self.board[move.oldPosition[0]][move.oldPosition[1]]
