@@ -1,0 +1,4 @@
+ Episode   Moves   EpsilonMeanRewardThisEpisode       MeanLoss     MeanQValue      TimeDelta                Time
+       0    8001     0.923        -49.597          0.000          0.000         10.188
+       1    2160     0.903        -49.581          1.056         -0.232         52.365
+       2    8001     0.834        -49.691          4.384        -17.185       2311.194
