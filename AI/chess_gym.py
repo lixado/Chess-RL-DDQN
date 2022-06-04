@@ -43,7 +43,7 @@ class ChessGym(gym.Env):
 
             winner = self.chess.GetWinner() 
             if winner == 0: # if no winner
-                reward = self.evaluateBoard(self.chess.GetCurrentColor())*10 # get basic score
+                reward = self.evaluateBoard(self.chess.GetCurrentColor()) # get basic score
 
             elif self.chess.GetWinner() == currentColor: # if we won
                 reward = 100
@@ -69,14 +69,21 @@ class ChessGym(gym.Env):
 
     def evaluateBoard(self, color):
         # calculate simple sum of how many alive and dead
+        simpleEvaluation = 0
         if color == "w":
             myDead = sum([abs(self.translateDict[p])*-1 for p in self.chess.whiteDead]) # -6
             enemyDead = sum([abs(self.translateDict[p])*1 for p in self.chess.blackDead]) # +7
-            return enemyDead + myDead # +7 + -6 = 1 
+            simpleEvaluation = enemyDead + myDead # +7 + -6 = 1 
         if color == "b":
             myDead = sum([abs(self.translateDict[p])*-1 for p in self.chess.blackDead]) 
             enemyDead = sum([abs(self.translateDict[p])*1 for p in self.chess.whiteDead])
-            return enemyDead + myDead
+            simpleEvaluation = enemyDead + myDead
+
+        simpleEvaluation = simpleEvaluation*10
+
+        # calulcate length to the oposite side to give reward
+
+        return simpleEvaluation
 
     def getObservation(self):
         return np.expand_dims(self.translateBoard(self.chess.board), axis=0)
