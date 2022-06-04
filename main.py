@@ -33,7 +33,6 @@ if __name__ == '__main__':
         episodes = 1000
         now = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
         save_dir = Path("checkpoints") / now
-        color = "w" # white playing
 
         action_space = []
         for y in range(8):
